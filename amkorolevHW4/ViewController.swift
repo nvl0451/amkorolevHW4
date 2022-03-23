@@ -57,4 +57,23 @@ class NoteViewController: UIViewController {
     @IBOutlet weak var noteTitle: UITextField!
     
     @IBOutlet weak var noteDesc: UITextView!
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(tappedSaveNote(sender:)))
+        
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(tappedCancelNote(sender:)))
+        
+        
+    }
+    
+    @objc func tappedSaveNote(sender: UIBarButtonItem) {
+        self.navigationController?.popViewController(animated: true)
+    }
+    @objc func tappedCancelNote(sender: UIBarButtonItem) {
+        self.navigationController?.popViewController(animated: true)
+    }
+    
+   
 }
