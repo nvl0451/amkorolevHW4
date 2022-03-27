@@ -6,13 +6,41 @@
 //
 
 import UIKit
-
-struct Note {
-    let title: String
-    let description: String
-}
+import CoreData
 
 class ViewController: UIViewController {
+    
+    let context: NSManagedObjectContext = {
+        let container = NSPersistentContainer(name: "CoreDataNotes")
+        container.loadPersistentStores {_, error in
+            if let error = error {
+                fatalError("Container loading fatal error!")
+            }
+        }
+        return container.viewContext
+    }()
+    
+    func saveChanges() {
+        if context.hasChanges {
+            try? context.save()
+        }
+        if let notes = try? context.fetch(Note.fetchRequest()) {
+            self.notes = notes
+        } else {
+            self.notes = []
+        }
+    }
+    
+    func loadData() {
+        if let notes = try? context.fetch(Note.fetchRequest()) {
+            self.notes = notes.sorted(by: {
+                $0.creationData.compare($1.creationData) == .orderedDescending
+            })
+        } else {
+            self.notes = []
+        }
+    }
+    
     @IBOutlet weak var emptyCollectionLabel: UILabel!
     
     @IBOutlet weak var notesCollectionView: UICollectionView!
@@ -29,6 +57,8 @@ class ViewController: UIViewController {
         // Do any additional setup after loading the view.
         notesCollectionView.delegate = self
         notesCollectionView.dataSource = self
+        
+        self.loadData()
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(createNote(sender:)))
     }
@@ -51,7 +81,7 @@ extension ViewController: UICollectionViewDelegate, UICollectionViewDataSource {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "NoteCell", for: indexPath) as! NoteCell
         let note = notes[indexPath.row]
         cell.title.text = note.title
-        cell.desc.text = note.description
+        cell.desc.text = note.descriptionText
         //cell.titleLabel.text = "Breathe in"
         //cell.descriptionLabel.text = "Breathe out"
         return cell
@@ -88,8 +118,11 @@ class NoteViewController: UIViewController {
             if desc == "New note..." {
                 desc = ""
             }
-            let newNote = Note(title: title, description: desc)
-            outputVC.notes.append(newNote)
+            let newNote = Note(context: outputVC.context)
+            newNote.title = title
+            newNote.descriptionText = desc
+            newNote.creationData = Date.now
+            outputVC.saveChanges()
         }
         self.navigationController?.popViewController(animated: true)
     }
